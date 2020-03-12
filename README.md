@@ -9,7 +9,6 @@ Use this ansible playbook to setup a fresh server with the following components:
 * Redis
 * Sidekiq
 * Monit (to keep Puma and Sidekiq runnig)
-* Elasticsearch
 * ruby-install
 * chruby
 * Directories to deploy Rails with Capistrano and Puma App Server (see below)
@@ -43,7 +42,6 @@ group :development do
   gem 'capistrano-chruby'
   gem 'capistrano3-puma'
   gem 'capistrano-sidekiq'
-  gem 'capistrano-npm'
 end
 ```
 
@@ -58,7 +56,6 @@ require 'capistrano/bundler'
 require 'capistrano/rails/migrations'
 require 'capistrano/rails/assets'
 require 'capistrano/chruby'
-require 'capistrano/npm'
 
 # Puma
 require 'capistrano/puma'
