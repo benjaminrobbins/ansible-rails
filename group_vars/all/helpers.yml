@@ -1,0 +1,10 @@
+---
+# site_hosts_canonical: "{{ item.value.site_hosts | map(attribute='canonical') | list }}"
+# site_hosts_redirects: "{{ item.value.site_hosts | selectattr('redirects', 'defined') | sum(attribute='redirects', start=[]) | list }}"
+# site_hosts: "{{ site_hosts_canonical | union(site_hosts_redirects) }}"
+# ssl_enabled: "{{ item.value.ssl is defined and item.value.ssl.enabled | default(false) }}"
+# ssl_stapling_enabled: "{{ item.value.ssl is defined and item.value.ssl.stapling_enabled | default(true) }}"
+# sites_use_ssl: "{{ site.values() | map(attribute='ssl') | selectattr('enabled') | list | count > 0 }}"
+# site_host: "{{ site_hosts_canonical | first }}"
+deploy_path: "{{ www_root  }}/{{ deploy_app_name }}"
+site_uses_certbot: site_ssl_enabled and site_ssl_provider | default('manual') == 'certbot'

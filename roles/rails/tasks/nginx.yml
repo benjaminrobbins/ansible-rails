@@ -1,0 +1,75 @@
+---
+- name: Copy SSL cert
+  copy:
+    src: "{{ item.value.ssl.cert }}"
+    dest: "{{ nginx_ssl_path }}/{{ site_ssl_cert | basename }}"
+    mode: 0640
+  # with_dict: "{{ wordpress_sites }}"
+  when: site_ssl_enabled and site_ssl_cert is defined
+  notify: reload nginx
+
+- name: Copy SSL key
+  copy:
+    src: "{{ item.value.ssl.key }}"
+    dest: "{{ nginx_ssl_path }}/{{ site_ssl_key | basename }}"
+    mode: 0600
+  # with_dict: "{{ wordpress_sites }}"
+  when: site_ssl_enabled and site_ssl_key is defined
+  notify: reload nginx
+
+- import_tasks: "{{ playbook_dir }}/roles/common/tasks/disable_challenge_sites.yml"
+
+- name: Create Nginx available sites
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ nginx_path }}/sites-available/{{ item.src | basename | regex_replace('.j2$', '') }}"
+  with_items: "{{ nginx_sites_confs }}"
+  when: item.enabled | default(true)
+  notify: reload nginx
+  tags: nginx-sites
+
+- name: Enable or disable Nginx sites
+  file:
+    path: "{{ nginx_path }}/sites-enabled/{{ item.src | basename | regex_replace('.j2$', '') }}"
+    src: "{{ nginx_path }}/sites-available/{{ item.src | basename | regex_replace('.j2$', '') }}"
+    state: "{{ item.enabled | default(true) | ternary('link', 'absent') }}"
+    force: yes
+  with_items: "{{ nginx_sites_confs }}"
+  notify: reload nginx
+  tags: nginx-sites
+
+# - name: Create Nginx conf for challenges location
+#   template:
+#     src: "{{ playbook_dir }}/roles/letsencrypt/templates/acme-challenge-location.conf.j2"
+#     dest: "{{ nginx_path }}/acme-challenge-location.conf"
+#   notify: reload nginx
+
+# - name: Determine current ruby for "{{ web_user }}"
+#   shell: su --login {{ web_user }} -c "which ruby"
+#   become: true
+#   # become_exe: su
+#   # become_user: "{{ web_user }}"
+#   # become_flags: "--login"
+#   register: web_user_ruby
+#
+# - name: Output current ruby var
+#   debug:
+#     msg: "{{ web_user }} which ruby result: {{ web_user_ruby }}"
+#
+# - name: Create Ruby on Rails configuration for Nginx
+#   template:
+#     src: "{{ nginx_rails_site_conf | default(nginx_rails_site_conf) }}"
+#     dest: "{{ nginx_path }}/sites-available/{{ site }}.conf"
+#   with_dict: "{{ wordpress_sites }}"
+#   notify: reload nginx
+#   tags: nginx-includes
+#
+# - name: Enable WordPress site
+#   file:
+#     src: "{{ nginx_path }}/sites-available/{{ item.key }}.conf"
+#     dest: "{{ nginx_path }}/sites-enabled/{{ item.key }}.conf"
+#     owner: root
+#     group: root
+#     state: link
+#   with_dict: "{{ wordpress_sites }}"
+#   notify: reload nginx

@@ -1,0 +1,78 @@
+---
+- name: Set ansible_python_interpreter
+  hosts: web:&development
+  gather_facts: false
+  become: yes
+  roles:
+    - {role: python_interpreter, tags: [always]}
+
+
+- name: "Ruby on Rails Dev Server: Install Rails Stack with Ruby 2.6.4 and nginx/puma onto local dev vagrant box"
+  hosts: web:&development
+  become: yes
+  remote_user: vagrant
+
+  roles:
+    - {role: common, tags: [common]}
+    #- { role: fail2ban, tags: [fail2ban] }
+    #- { role: ferm, tags: [ferm] }
+    - {role: ntp, tags: [ntp]}
+    - {role: sshd, tags: [sshd]}
+    - {role: postgresql, tags: [postgresql]}
+    - {role: chruby, tags: [chruby, ruby]}
+    - {role: ruby-install, tags: [ruby-install, ruby]}
+    - {role: nginx, tags: [nginx]}
+    - {role: logrotate, tags: [logrotate]}
+    - {role: nodejs, tags: [nodejs, rails]}
+    - {role: yarn, tags: [yarn, rails]}
+    - {role: mailhog, tags: [mailhog, mail]}
+    - {role: redis, tags: [redis, rails]}
+    - {role: memcached, tags: [memcached]}
+    - {role: rails-setup, tags: [rails-setup]}
+    - {role: rails, tags: [rails-setup]}
+    - {role: monit, tags: [monit, rails]}
+
+
+    # - { role: rails-install, tags: [rails-install, rails] }
+
+
+    # - { role: composer, tags: [composer] }
+    # - { role: wp-cli, tags: [wp-cli] }
+    # - { role: wordpress-setup, tags: [wordpress, wordpress-setup] }
+    # - { role: wordpress-install, tags: [wordpress, wordpress-install] }
+
+  # roles:
+  #   - common
+  #   - deploy-user
+  #   - mysql
+  #   - nginx
+  #   - certbot
+  #   - ruby
+  #   - rails
+  #   - monit
+  #   - memcached
+  #   - redis
+  #   - elasticsearch
+
+# - name: "WordPress Server: Install LEMP Stack with PHP 7.3 and MariaDB MySQL"
+#   hosts: web:&development
+#   become: yes
+#   remote_user: vagrant
+
+#   roles:
+#     - { role: common, tags: [common] }
+#     - { role: fail2ban, tags: [fail2ban] }
+#     - { role: ferm, tags: [ferm] }
+#     - { role: ntp, tags: [ntp] }
+#     - { role: sshd, tags: [sshd] }
+#     - { role: mariadb, tags: [mariadb] }
+#     - { role: mailhog, tags: [mailhog, mail] }
+#     - { role: php, tags: [php] }
+#     - { role: xdebug, tags: [php, xdebug] }
+#     - { role: memcached, tags: [memcached] }
+#     - { role: nginx, tags: [nginx] }
+#     - { role: logrotate, tags: [logrotate] }
+#     - { role: composer, tags: [composer] }
+#     - { role: wp-cli, tags: [wp-cli] }
+#     - { role: wordpress-setup, tags: [wordpress, wordpress-setup] }
+#     - { role: wordpress-install, tags: [wordpress, wordpress-install] }

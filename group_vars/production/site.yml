@@ -1,0 +1,27 @@
+---
+# Disable firewall for local development
+ferm_enabled: true
+
+# environment
+#env: staging
+
+# Sidekiq
+monit_sidekiq_enabled: false
+
+# user info
+web_user: deploy
+web_group: www-data
+
+# Host info
+site_name: benrobbins.co
+site_app_name: benrobbins_co
+site_host_canonical: benrobbins.co
+# site_host_redirects:
+#   - www.testsite.test
+#   - www2.testsite.test
+
+
+# SSL settings
+site_ssl_enabled: true
+site_ssl_provider: certbot
+site_ssl_stapling_enabled: true

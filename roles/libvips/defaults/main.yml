@@ -1,0 +1,8 @@
+---
+libvips_packages:
+  - libvips42_8.6.4-1_amd64.deb
+  - gir1.2-vips-8.0_8.6.4-1_amd64.deb
+  - libvips-dev_8.6.4-1_amd64.deb
+  - libvips-doc_8.6.4-1_all.deb
+  - libvips-tools_8.6.4-1_amd64.deb
+  - python-vipscc_8.6.4-1_amd64.deb

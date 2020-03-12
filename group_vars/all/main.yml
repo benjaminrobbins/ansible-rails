@@ -1,0 +1,37 @@
+apt_cache_valid_time: 3600
+apt_package_state: latest
+apt_security_package_state: latest
+apt_dev_package_state: latest
+ntp_timezone: Etc/UTC
+ntp_manage_config: true
+www_root: /srv/www
+ip_whitelist:
+  - "{{ (env == 'development') | ternary(ansible_default_ipv4.gateway, ipify_public_ip | default('')) }}"
+
+#app_name: rails_app
+env: development
+
+ruby_install_version: 0.7.0
+chruby_version: 0.3.9
+ruby_version: 2.6.4
+
+# General settings
+deploy_dir: "{{ site_app_name }}"
+deploy_app_name: "{{ site_name }}"
+deploy_server_hostname: "{{ site_name }}"
+deploy_user: "{{ web_user }}"
+
+# deploy_password: deployPass
+# deploy_app_name: "{{ app_name }}"
+# deploy_server_hostname: benrobbins.co
+app_shared_dirs:
+  - releases
+  - repo
+  - shared
+  - shared/config
+  - shared/log
+  - shared/public
+  - shared/tmp
+
+puma_workers: 4
+puma_threads: 4,16

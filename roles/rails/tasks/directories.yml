@@ -1,0 +1,25 @@
+---
+- name: Create web root of sites
+  file:
+    path: "{{ deploy_path }}/"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
+    mode: 0755
+    state: directory
+
+- name: Create shared folders
+  file:
+    path: "{{ deploy_path }}/{{ item }}"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
+    mode: 0755
+    state: directory
+  with_items: "{{ app_shared_dirs }}"
+
+- name: Change site owner to web_user
+  file:
+    path: "{{ deploy_path }}"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
+    state: directory
+    recurse: yes

@@ -1,0 +1,10 @@
+---
+apt_packages_custom:
+  bison: latest
+  libffi-dev: latest
+  libgdbm-dev: latest
+  libreadline-dev: latest
+  libyaml-dev: latest
+  zlib1g-dev: latest
+  libncurses5-dev: latest
+  libssl-dev: latest

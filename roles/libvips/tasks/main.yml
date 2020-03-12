@@ -1,0 +1,15 @@
+---
+- name: Copy libvips to remote
+  copy:
+    src: files/libvips
+    dest: /tmp
+
+- name: Install packages
+  apt:
+    deb: "/tmp/libvips/{{ item }}"
+  with_items: "{{ libvips_packages }}"
+
+- name: Remove directory
+  file:
+    path: /tmp/libvips
+    state: absent

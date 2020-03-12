@@ -1,0 +1,75 @@
+---
+- name: Ensure required packages are installed (apt)
+  become: true
+  apt:
+    pkg:
+      - make
+    state: present
+
+- name: Check if chruby is already installed
+  stat:
+    path: /usr/local/share/doc/chruby-{{ chruby_version }}
+  register: chruby_path
+
+- name:
+  set_fact:
+    chruby_archive_path: /tmp/chruby-{{ chruby_version }}.tar.gz
+    chruby_archive_destination_path: /tmp/chruby-{{ chruby_version }}
+
+- name: Download chruby
+  get_url:
+    url: http://github.com/postmodern/chruby/archive/v{{ chruby_version }}.tar.gz
+    dest: "{{ chruby_archive_path }}"
+  when: chruby_path.stat.exists == false
+
+- name: Unarchive chruby package
+  unarchive:
+    src: "{{ chruby_archive_path }}"
+    dest: /tmp
+    creates: "{{ chruby_archive_destination_path }}/Makefile"
+    remote_src: yes
+  when: chruby_path.stat.exists == false
+
+- name: Run chruby install target
+  command: make install
+  args:
+    chdir: "{{ chruby_archive_destination_path }}"
+  when: chruby_path.stat.exists == false
+
+- name: Deploy chruby autoload script
+  copy:
+    src: chruby.sh
+    dest: /etc/profile.d/chruby.sh
+  when: chruby_path.stat.exists == false
+
+- name: Deploy chruby-wrapper script
+  copy:
+    src: chruby-wrapper
+    dest: /usr/local/bin/chruby-wrapper
+    owner: root
+    mode: 0755
+  when: chruby_path.stat.exists == false
+
+- name: Load chruby autoload script contents
+  slurp:
+    src: /etc/profile.d/chruby.sh
+  register: autoload_script_contents_slurp
+
+- name: Decode slurped data
+  set_fact:
+    autoload_script_contents: "{{ autoload_script_contents_slurp['content'] | b64decode }}"
+
+- name: Deploy chruby autoload script in /etc/bash.bashrc
+  blockinfile:
+    block: "{{ autoload_script_contents }}"
+    dest: /etc/bash.bashrc
+
+- name: Cleanup chruby package
+  file:
+    path: "{{ chruby_archive_path }}"
+    state: absent
+
+- name: Cleanup chruby package contents
+  file:
+    path: "{{ chruby_archive_destination_path }}"
+    state: absent

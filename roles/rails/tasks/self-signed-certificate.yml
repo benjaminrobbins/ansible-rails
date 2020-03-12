@@ -1,0 +1,90 @@
+---
+# - debug:
+#     msg: "Self sign cert vars: \n site_hosts: {{ site_hosts }} \n altName: {{ site_hosts | regex_replace('(.*)', 'DNS:\\1') }} "
+#     verbosity: 4
+#     with_dict: "{{ wordpress_sites | combine(ssl_default_site) }}"
+
+
+- name: Debugself-signed cert vars
+  debug:
+    msg: |
+      Self signed cert vars:
+      site_host: {{ site_host_canonical }}
+  #with_dict: "{{ site | combine(ssl_default_site) }}"
+  when:
+    - site_ssl_enabled
+    - site_ssl_provider | default('manual') == 'self-signed'
+
+- name: Generate self-signed certificates
+  debugger: on_failed
+  shell: "openssl req -new -newkey rsa:2048 \
+    -days 3650 -nodes -x509 -sha256 \
+    -extensions req_ext -config <( \
+cat <<' EOF'\n
+[req]\n
+prompt = no\n
+distinguished_name = req_dn\n
+[req_dn]\n
+commonName = {{ site_host_canonical }}\n
+[req_ext]\n
+subjectAltName = DNS:{{ site_host_canonical }}\n
+EOF\n
+    ) \
+    -keyout {{ site_host_canonical  | quote }}.key -out {{ site_host_canonical | quote }}.cert"
+  args:
+    executable: "/bin/bash"
+    chdir: "{{ nginx_ssl_path }}"
+    creates: "{{ site_host_canonical  | quote }}.*"
+  when:
+    - site_ssl_enabled
+    - site_ssl_provider | default('manual') == 'self-signed'
+  notify: reload nginx
+
+#subjectAltName = {{ site_hosts | regex_replace('(.*)', 'DNS:\\1') }}\n
+
+#site_hosts | union(multisite_subdomains_wildcards) | map('regex_replace', '(.*)', 'DNS:\\1') | join(',')
+
+# - name: Ensure directory exists for local self-signed TLS certs.
+#   file:
+#     path: "{{ nginx_ssl_path }}"
+#     state: directory
+#   when:
+#     - site_ssl_enabled
+#     - ssl_enabled
+#     - item.value.ssl.provider | default('manual') == 'self-signed'
+#   with_dict: "{{ wordpress_sites | combine(ssl_default_site) }}"
+
+# - name: Generate an OpenSSL private key.
+#   openssl_privatekey:
+#     path: "{{ nginx_ssl_path }}/{{item.key}}.pem"
+#   with_dict: "{{ wordpress_sites | combine(ssl_default_site) }}"
+#   when:
+#     - site_ssl_enabled
+#     - ssl_enabled
+#     - item.value.ssl.provider | default('manual') == 'self-signed'
+
+# - name: Generate an OpenSSL CSR.
+#   openssl_csr:
+#     path: "{{ nginx_ssl_path }}/{{item.key}}.csr"
+#     privatekey_path: "{{ nginx_ssl_path }}/{{item.key}}.pem"
+#     common_name: "{{item.key}}"
+#     subject_alt_name: "DNS:{{item.key}},DNS:*.{{item.key}}"
+#   with_dict: "{{ wordpress_sites | combine(ssl_default_site) }}"
+#   when:
+#     - site_ssl_enabled
+#     - ssl_enabled
+#     - item.value.ssl.provider | default('manual') == 'self-signed'
+
+
+# - name: Generate a Self Signed OpenSSL certificate.
+#   openssl_certificate:
+#     path: "{{ nginx_ssl_path }}/{{item.key}}.cert"
+#     privatekey_path: "{{ nginx_ssl_path }}/{{item.key}}.pem"
+#     csr_path: "{{ nginx_ssl_path }}/{{item.key}}.csr"
+#     provider: selfsigned
+#   with_dict: "{{ wordpress_sites | combine(ssl_default_site) }}"
+#   when:
+#     - site_ssl_enabled
+#     - ssl_enabled
+#     - item.value.ssl.provider | default('manual') == 'self-signed'
+#   notify: reload nginx

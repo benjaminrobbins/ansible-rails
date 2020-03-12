@@ -1,0 +1,17 @@
+---
+dependencies: []
+
+galaxy_info:
+  author: ferrarimarco
+  description: Install ruby-install
+  license: "license (Apache 2.0)"
+  min_ansible_version: 2.0
+  platforms:
+  - name: Ubuntu
+    versions:
+      - vivid
+      - wily
+  galaxy_tags:
+    - installer
+    - ruby
+    - ruby_install

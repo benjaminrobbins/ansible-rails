@@ -1,0 +1,60 @@
+---
+# - name: Create deploy dir
+#   file: path={{ deploy_dir }}{{ deploy_app_name }} state=directory owner={{ deploy_user }} group={{ deploy_user }}
+#
+# - name: Create shared directories
+#   file:
+#     path: "{{ deploy_dir }}/{{deploy_app_name }}/{{ item }}"
+#     state: directory
+#     owner: "{{ deploy_user }}"
+#     group: "{{ deploy_user }}"
+#   with_items: "{{ shared_dirs }}"
+
+- name: Create web root of sites
+  file:
+    path: "{{ deploy_path }}/"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
+    mode: 0755
+    state: directory
+
+# - name: Create current folder
+#   file:
+#     path: "{{ deploy_path }}/{{ app_current_folder_name | default('current') }}/"
+#     owner: "{{ web_user }}"
+#     group: "{{ web_group }}"
+#     mode: 0755
+#     state: directory
+#   # with_dict: "{{ wordpress_sites }}"
+
+- name: Create shared folders
+  file:
+    path: "{{ deploy_path }}/{{ item }}"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
+    mode: 0755
+    state: directory
+  with_items: "{{ app_shared_dirs }}"
+
+- name: Change site owner to web_user
+  file:
+    path: "{{ deploy_path }}"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
+    state: directory
+    recurse: yes
+
+# - name: Copy secrets.yml
+#   template: src=secrets.yml dest={{ deploy_path }}/shared/config/secrets.yml owner={{ deploy_user }} group={{ deploy_user }}
+
+# - name: Copy database.yml
+#   template: src=database.yml dest={{ deploy_path }}/shared/config/database.yml owner={{ deploy_user }} group={{ deploy_user }}
+
+- name: Copy puma.rb
+  template: src=puma.rb dest={{ deploy_path }}/shared/puma.rb owner={{ web_user }} group={{ web_group }}
+
+- name: Restart Nginx
+  service: name=nginx state=restarted enabled=yes
+
+- name: Ensure Nginx is running
+  service: name=nginx state=started enabled=yes

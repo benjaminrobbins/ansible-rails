@@ -1,0 +1,45 @@
+---
+- import_playbook: variable-check.yml
+  vars:
+    playbook: server.yml
+
+- name: Test Connection and Determine Remote User
+  hosts: web:&{{ env }}
+  gather_facts: false
+  roles:
+    - {role: connection, tags: [connection, always]}
+
+- name: Set ansible_python_interpreter
+  hosts: web:&{{ env }}
+  gather_facts: false
+  become: yes
+  roles:
+    - {role: python_interpreter, tags: [always]}
+
+- name: Ruby on Rails Server - Install Postgresql Rails Stack
+  hosts: web:&{{ env }}
+  become: yes
+  roles:
+    - {role: common, tags: [common]}
+    - {role: swapfile, swapfile_size: 1GB, swapfile_file: /swapfile, tags: [swapfile]}
+    - {role: fail2ban, tags: [fail2ban]}
+    - {role: ferm, tags: [ferm]}
+    - {role: ntp, tags: [ntp]}
+    - {role: users, tags: [users]}
+    - {role: sshd, tags: [sshd]}
+    - {role: postgresql, tags: [postgresql]}
+    - {role: nodejs, tags: [nodejs]}
+    - {role: chruby, tags: [chruby, ruby]}
+    - {role: ruby-install, tags: [ruby-install, ruby]}
+    - {role: memcached, tags: [memcached]}
+    - {role: nginx, tags: [nginx]}
+    - {role: geerlingguy.certbot, tags: [certbot], when: site_uses_certbot}
+    - {role: logrotate, tags: [logrotate]}
+    - {role: yarn, tags: [yarn, rails]}
+    - {role: redis, tags: [redis, rails]}
+    - {role: memcached, tags: [memcached]}
+    - {role: monit, tags: [monit, rails]}
+    #- {role: rails-setup, tags: [rails-setup]}
+    - {role: rails, tags: [rails, rails-setup]}
+    - {role: libvips, tags: [libvips]}
+    - {role: apt.update, tags: [apt-update]}

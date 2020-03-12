@@ -1,0 +1,8 @@
+---
+# Documentation: https://roots.io/trellis/docs/vault/
+# vault_database_password: 6d83ae87b993
+
+vault_users:
+  - name: "{{ admin_user }}"
+    password: BenHasPowa21!
+    salt: "generateme"

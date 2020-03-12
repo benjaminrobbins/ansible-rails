@@ -1,0 +1,10 @@
+production: &production
+  adapter: postgresql
+  encoding: utf8
+  database: "{{ site_app_name }}"
+  username: "{{ web_user }}"
+  password: "{{ postgresql_rails_password }}"
+  host: localhost
+
+staging:
+  <<: *production

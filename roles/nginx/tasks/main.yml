@@ -1,28 +1,52 @@
 ---
+- name: Add Nginx PPA
+  apt_repository:
+    repo: "{{ nginx_ppa }}"
+    update_cache: yes
+
 - name: Install Nginx
-  apt: name=nginx state=latest
+  apt:
+    name: "{{ nginx_package }}"
+    state: "{{ nginx_package_state | default(apt_package_state) }}"
+    cache_valid_time: "{{ apt_cache_valid_time }}"
 
-- name: Check for dhparam.pem
-  stat: path=/etc/nginx/dhparam.pem
-  register: dhparam
+- name: Create SSL directory
+  file:
+    mode: 0700
+    path: "{{ nginx_path }}/ssl"
+    state: directory
 
-- name: Generate dhparam
-  command: openssl dhparam -out /etc/nginx/dhparam.pem 4096
-  when: nginx_https_enabled is defined and nginx_https_enabled == true and dhparam.stat.exists == false
+- name: Generate strong unique Diffie-Hellman group.
+  command: openssl dhparam -out dhparams.pem 2048
+  args:
+    chdir: "{{ nginx_path }}/ssl"
+    creates: "{{ nginx_path }}/ssl/dhparams.pem"
+  when: site_ssl_enabled
+  notify: reload nginx
+  tags: [diffie-hellman, letsencrypt, nginx-includes, nginx-sites]
 
-- name: Copy nginx configuration (with HTTPS enabled)
-  template: src=nginx_app_config_https dest=/etc/nginx/sites-available/{{ deploy_app_name }} owner=root group=root
-  when: nginx_https_enabled is defined and nginx_https_enabled == true
+- name: Copy h5bp configs
+  copy:
+    src: templates/h5bp
+    dest: "{{ nginx_path }}"
+  notify: reload nginx
 
-- name: Copy nginx configuration (without HTTPS enabled)
-  template: src=nginx_app_config dest=/etc/nginx/sites-available/{{ deploy_app_name }} owner=root group=root
-  when: nginx_https_enabled is defined and nginx_https_enabled != true
+- name: Create nginx.conf
+  template:
+    src: "{{ nginx_conf }}"
+    dest: "{{ nginx_path }}/nginx.conf"
+  notify: reload nginx
+  tags: nginx-includes
 
-- name: Disable default config
-  file: path=/etc/nginx/sites-enabled/default state=absent
+- name: Disable default server
+  file:
+    path: "{{ nginx_path }}/sites-enabled/default"
+    state: absent
+  notify: reload nginx
 
-- name: Symlink to sites-enabled
-  file: src=/etc/nginx/sites-available/{{ deploy_app_name }} dest=/etc/nginx/sites-enabled/{{ deploy_app_name }} owner=root group=root state=link
-
-- name: Copy htpasswd
-  template: src=htpasswd dest=/etc/nginx/.htpasswd owner=root group=root
+- name: Enable Nginx to start on boot
+  service:
+    name: nginx
+    enabled: yes
+    state: started
+    use: service

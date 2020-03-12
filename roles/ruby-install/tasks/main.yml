@@ -1,0 +1,69 @@
+---
+- name: Ensure required apt packages are installed
+  apt:
+    autoremove: yes
+    cache_valid_time: 3600
+    pkg:
+      - curl
+      - gcc
+      - make
+      - wget
+    state: latest
+    update_cache: yes
+  become: yes
+#  with_items:
+
+
+- name: Check if ruby-install is already installed
+  stat:
+    path: /usr/local/share/doc/ruby-install-{{ ruby_install_version }}
+  register: ruby_install_path
+
+- name:
+  set_fact:
+    ruby_install_archive_path: /tmp/ruby-install-{{ ruby_install_version }}.tar.gz
+    ruby_install_archive_destination_path: /tmp/ruby-install-{{ ruby_install_version }}
+
+- name: Download ruby-install package
+  get_url:
+    url: https://github.com/postmodern/ruby-install/archive/v{{ ruby_install_version }}.tar.gz
+    dest: "{{ ruby_install_archive_path }}"
+  when: ruby_install_path.stat.exists == false
+
+- name: Unarchive ruby-install package
+  unarchive:
+    src: "{{ ruby_install_archive_path }}"
+    dest: /tmp
+    creates: "{{ ruby_install_archive_destination_path }}/Makefile"
+    remote_src: yes
+  when: ruby_install_path.stat.exists == false
+
+- name: Run ruby-install install target
+  args:
+    chdir: "{{ ruby_install_archive_destination_path }}"
+  command: make install
+  when: ruby_install_path.stat.exists == false
+
+- name: Cleanup ruby-install package
+  file:
+    path: "{{ ruby_install_archive_path }}"
+    state: absent
+
+- name: Cleanup ruby-install package contents
+  file:
+    path: "{{ ruby_install_archive_destination_path }}"
+    state: absent
+
+- name: Create Rubies directory
+  file:
+    path: "/opt/rubies"
+    mode: 0755
+    state: directory
+
+- name: Install Ruby
+  command: "/usr/local/bin/ruby-install ruby {{ ruby_version }}"
+  args:
+    creates: "/opt/rubies/ruby-{{ ruby_version }}/bin/ruby"
+
+- name: Install Bundler
+  command: "/usr/local/bin/chruby-exec ruby-{{ ruby_version }} -- gem install bundler"

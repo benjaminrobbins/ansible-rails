@@ -1,26 +1,50 @@
 ---
-- name: Create deploy dir
-  file: path={{ deploy_dir }}{{ deploy_app_name }} state=directory owner={{ deploy_user }} group={{ deploy_user }}
+- import_tasks: self-signed-certificate.yml
+  tags: wordpress-setup-self-signed-certificate
+- import_tasks: nginx-client-cert.yml
+  tags: wordpress-setup-nginx-client-cert
 
-- name: Create shared directories
+- name: Create web root
   file:
-    path: "{{ deploy_dir }}/{{deploy_app_name }}/{{ item }}"
+    path: "{{ deploy_dir  }}{{ deploy_app_name }}"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
+    mode: 0755
     state: directory
-    owner: "{{ deploy_user }}"
-    group: "{{ deploy_user }}"
-  with_items: "{{ shared_dirs }}"
 
-- name: Copy secrets.yml
-  template: src=secrets.yml dest={{ deploy_dir }}{{ deploy_app_name }}/shared/config/secrets.yml owner={{ deploy_user }} group={{ deploy_user }}
+- import_tasks: directories.yml
+  tags: wordpress-install-directories
 
-- name: Copy database.yml
-  template: src=database.yml dest={{ deploy_dir }}{{ deploy_app_name }}/shared/config/database.yml owner={{ deploy_user }} group={{ deploy_user }}
+- import_tasks: nginx-includes.yml
+  tags: [nginx-includes, wordpress-setup-nginx]
+
+- import_tasks: nginx.yml
+  tags: wordpress-setup-nginx
+
+- name: Add known_hosts
+  known_hosts:
+    name: "{{ item.name }}"
+    key: "{{ item.key | default(omit) }}"
+    path: "{{ item.path | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+  become: no
+  with_items: "{{ known_hosts | default([]) }}"
+
+- name: Configure puma virtual host.
+  template:
+    src: puma.conf.j2
+    dest: /etc/nginx/sites-available/puma.conf
+  notify: restart nginx
+
+- name: Ensure puma virtual host is enabled.
+  file:
+    src: /etc/nginx/sites-available/puma.conf
+    dest: /etc/nginx/sites-enabled/puma.conf
+    state: link
 
 - name: Copy puma.rb
-  template: src=puma.rb dest={{ deploy_dir }}{{ deploy_app_name }}/shared/puma.rb owner={{ deploy_user }} group={{ deploy_user }}
-
-- name: Restart Nginx
-  service: name=nginx state=restarted enabled=yes
-
-- name: Ensure Nginx is running
-  service: name=nginx state=started enabled=yes
+  template:
+    src: puma.rb
+    dest: "{{ deploy_path }}/shared/puma.rb"
+    owner: "{{ web_user }}"
+    group: "{{ web_group }}"
